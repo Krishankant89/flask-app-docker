@@ -1,0 +1,64 @@
+version: "3.9"   # ❌ You used "6.4" earlier → invalid version
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_container
+    ports:
+      # ❌ Wrong: "27018:27018" (Mongo runs on 27017 inside container)
+      - "27018:27017"
+    networks:
+      - backend_net
+    environment:
+      # ❌ Wrong earlier: spaces around '='
+      # MONGO_INITDB_ROOT_USERNAME = admin
+      # MONGO_INITDB_ROOT_PASSWORD = supersecret
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=supersecret
+    volumes:
+      # ❌ Wrong earlier: "- mongo_data" (no mapping)
+      - mongo_data:/data/db
+  
+  mongo-express:
+    image: mongo-express:latest
+    container_name: express_container
+    ports:
+      - "8080:8081"
+    networks:
+      - backend_net
+    environment:
+      # ❌ Wrong earlier:
+      # - ME_CONFIG_MONGODB_ADMINIUSERNAME: admin (typo + wrong format)
+      # - ME_CONFIG_MONGODB_PASSWORD: supersecret (wrong variable name)
+      
+      # ❌ Also wrong: mixing list (-) and key:value styles
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: supersecret
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: supersecret
+    depends_on:
+      - mongodb
+  
+  app:   # 👈 THIS WAS MISSING
+    build: .
+    container_name: flask_app
+    ports:
+      - "5000:5000"
+    networks:
+      - backend_net
+    depends_on:
+      - mongodb
+
+volumes:
+  # ❌ Wrong earlier:
+  # -mongo_data (invalid syntax)
+  mongo_data:
+
+networks:
+  # ❌ Wrong earlier:
+  # networks:
+  #   - backend_net:
+  #       driver: bridge   (invalid list + mapping mix)
+  backend_net:
+    driver: bridge
