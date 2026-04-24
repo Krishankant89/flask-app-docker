@@ -1,30 +1,23 @@
-from flask import Flask, jsonify
-from pymongo import MongoClient
 import os
+from flask import Flask
+from pymongo import MongoClient
 
 app = Flask(__name__)
+user = os.getenv("DB_USER")
+password = os.getenv("DB_PASS")
+host = os.getenv("DB_HOST")
 
-# Connect to MongoDB using the credentials from docker-compose
-client = MongoClient(
-    host="mongodb",
-    port=27017,
-    username=os.environ.get("MONGO_INITDB_ROOT_USERNAME", "admin"),
-    password=os.environ.get("MONGO_INITDB_ROOT_PASSWORD", "supersecret")
-)
-db = client["mydb"]
 
-@app.route("/")
-def index():
-    return jsonify({"status": "Flask is running!"})
+uri = f"mongodb://{user}:{password}@{host}:27017/"
+client = MongoClient(uri)
 
-@app.route("/health")
-def health():
-    # Quick MongoDB connectivity check
+@app.route('/')
+def hello():
     try:
-        client.admin.command("ping")
-        return jsonify({"status": "ok", "mongo": "connected"})
+        client.admin.command('ping')
+        return "Connected to MongoDB successfully!"
     except Exception as e:
-        return jsonify({"status": "error", "mongo": str(e)}), 500
+        return f"Connection failed: {e}"
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)

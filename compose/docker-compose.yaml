@@ -1,22 +1,18 @@
-version: "3.9"   # ❌ You used "6.4" earlier → invalid version
+version: "3.9"
 
 services:
   mongodb:
     image: mongo:latest
     container_name: mongodb_container
     ports:
-      # ❌ Wrong: "27018:27018" (Mongo runs on 27017 inside container)
       - "27018:27017"
     networks:
       - backend_net
     environment:
-      # ❌ Wrong earlier: spaces around '='
-      # MONGO_INITDB_ROOT_USERNAME = admin
-      # MONGO_INITDB_ROOT_PASSWORD = supersecret
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=supersecret
+      # Use variables from .env
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
     volumes:
-      # ❌ Wrong earlier: "- mongo_data" (no mapping)
       - mongo_data:/data/db
   
   mongo-express:
@@ -27,20 +23,15 @@ services:
     networks:
       - backend_net
     environment:
-      # ❌ Wrong earlier:
-      # - ME_CONFIG_MONGODB_ADMINIUSERNAME: admin (typo + wrong format)
-      # - ME_CONFIG_MONGODB_PASSWORD: supersecret (wrong variable name)
-      
-      # ❌ Also wrong: mixing list (-) and key:value styles
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: supersecret
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASS}
       ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: supersecret
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_PASS}
     depends_on:
       - mongodb
   
-  app:   # 👈 THIS WAS MISSING
+  app:
     build: .
     container_name: flask_app
     ports:
@@ -49,19 +40,15 @@ services:
       - backend_net
     depends_on:
       - mongodb
-    environment:                          
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=supersecret
+    environment:
+      # We pass these to Flask so it knows how to log in
+      - DB_USER=${MONGO_USER}
+      - DB_PASS=${MONGO_PASS}
+      - DB_HOST=mongodb
 
 volumes:
-  # ❌ Wrong earlier:
-  # -mongo_data (invalid syntax)
   mongo_data:
 
 networks:
-  # ❌ Wrong earlier:
-  # networks:
-  #   - backend_net:
-  #       driver: bridge   (invalid list + mapping mix)
   backend_net:
     driver: bridge
