@@ -49,6 +49,9 @@ services:
       - backend_net
     depends_on:
       - mongodb
+    environment:                          
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=supersecret
 
 volumes:
   # ❌ Wrong earlier:
